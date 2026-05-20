@@ -1,5 +1,4 @@
 const questions = [
-
 {
 question:"What does phishing mean in Cybersecurity?",
 answers:[
@@ -9,67 +8,33 @@ answers:[
 "D. Encrypting files"
 ],
 correct:1
-},
-
-{
-question:"Which of the following is the strongest password?",
-answers:[
-"A. password123",
-"B. qwerty",
-"C. John1990",
-"D. T#9vL!2xQ@7"
-],
-correct:3
-},
-
-{
-question:"What is the main purpose of a firewall?",
-answers:[
-"A. To cool down computers",
-"B. To block unauthorized network access",
-"C. To increase internet speed",
-"D. To store passwords"
-],
-correct:1
-},
-
-{
-question:"What does 2FA stand for?",
-answers:[
-"A. Two-Factor Authentication",
-"B. Two-File Access",
-"C. Twice-Fast Approval",
-"D. Two-Firewall Authorization"
-],
-correct:0
 }
-
 ];
 
 let score = 0;
 let lives = 3;
-let gear = 1;
 let speed = 5;
-let highScore = localStorage.getItem("highscore") || 0;
+let gear = 1;
 
-document.getElementById("highScore").innerText = highScore;
+let gameStarted = false;
+let gamePaused = true;
 
 const config = {
-  type: Phaser.AUTO,
-  width: window.innerWidth,
-  height: window.innerHeight,
-  parent: "gameContainer",
-  physics: {
-    default: "arcade",
-    arcade: {
-      debug: false
+    type: Phaser.AUTO,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    parent: "gameContainer",
+    physics:{
+        default:"arcade",
+        arcade:{
+            debug:false
+        }
+    },
+    scene:{
+        preload,
+        create,
+        update
     }
-  },
-  scene: {
-    preload,
-    create,
-    update
-  }
 };
 
 const game = new Phaser.Game(config);
@@ -78,353 +43,270 @@ let player;
 let enemies;
 let cursors;
 let roadLines = [];
-let gamePaused = false;
-let moveLeft = false;
-let moveRight = false;
 
 function preload(){
 
-this.load.image("player","assets/images/player.png");
-this.load.image("enemy","assets/images/enemy.png");
+    this.load.image(
+        "player",
+        "assets/images/player.png"
+    );
+
+    this.load.image(
+        "enemy",
+        "assets/images/enemy.png"
+    );
 
 }
 
 function create(){
 
-  // Road lines
-  for(let i=0;i<20;i++){
-
-    let line = this.add.rectangle(
-      window.innerWidth/2,
-      i*80,
-      10,
-      40,
-      0xffffff
+    // ROAD
+    this.add.rectangle(
+        window.innerWidth/2,
+        window.innerHeight/2,
+        420,
+        window.innerHeight,
+        0x222222
     );
 
-    roadLines.push(line);
-  }
+    // ROAD LINES
+    for(let i=0;i<20;i++){
 
-  player = this.physics.add.sprite(
-    window.innerWidth/2,
-    window.innerHeight-120,
-    "player"
-  );
+        let line = this.add.rectangle(
+            window.innerWidth/2,
+            i*80,
+            10,
+            50,
+            0xffffff
+        );
 
-  player.setScale(1.2);
-
-  enemies = this.physics.add.group();
-
-  spawnEnemy.call(this);
-
-  this.time.addEvent({
-    delay:1200,
-    callback:spawnEnemy,
-    callbackScope:this,
-    loop:true
-  });
-
-  this.physics.add.collider(player,enemies,()=>{
-    if(!gamePaused){
-      crash();
+        roadLines.push(line);
     }
-  });
 
-  cursors = this.input.keyboard.createCursorKeys();
+    // PLAYER
+    player = this.physics.add.sprite(
+        window.innerWidth/2,
+        window.innerHeight - 150,
+        "player"
+    );
 
-  // Keyboard gears
-  this.input.keyboard.on("keydown", (e)=>{
+    player.setScale(1.2);
 
-    if(e.key==="1") setGear(1);
-    if(e.key==="2") setGear(2);
-    if(e.key==="3") setGear(3);
-    if(e.key==="4") setGear(4);
+    // ENEMIES
+    enemies = this.physics.add.group();
 
-  });
+    // KEYBOARD
+    cursors = this.input.keyboard.createCursorKeys();
+
+    // SPAWN ENEMIES
+    this.time.addEvent({
+        delay:1500,
+        callback:()=>{
+
+            if(!gamePaused){
+
+                let x = Phaser.Math.Between(
+                    window.innerWidth/2 - 150,
+                    window.innerWidth/2 + 150
+                );
+
+                let enemy = enemies.create(
+                    x,
+                    -100,
+                    "enemy"
+                );
+
+                enemy.setScale(1.2);
+
+            }
+
+        },
+        loop:true
+    });
+
+    // COLLISION
+    this.physics.add.overlap(
+        player,
+        enemies,
+        crash,
+        null,
+        this
+    );
 
 }
 
 function update(){
 
-  if(gamePaused) return;
+    if(gamePaused) return;
 
-  // Road animation
-  roadLines.forEach(line=>{
+    // ROAD MOVEMENT
+    roadLines.forEach(line=>{
 
-    line.y += speed;
+        line.y += speed;
 
-    if(line.y > window.innerHeight){
-      line.y = 0;
+        if(line.y > window.innerHeight){
+
+            line.y = -50;
+        }
+
+    });
+
+    // PLAYER CONTROLS
+    if(cursors.left.isDown){
+
+        player.x -= 7;
     }
 
-  });
+    if(cursors.right.isDown){
 
-  // Movement
-  if(cursors.left.isDown || moveLeft){
-    player.x -= 7;
-  }
-
-  if(cursors.right.isDown || moveRight){
-    player.x += 7;
-  }
-
-  Phaser.Actions.IncY(enemies.getChildren(), speed);
-
-  enemies.getChildren().forEach(enemy=>{
-
-    if(enemy.y > window.innerHeight+100){
-
-      enemy.destroy();
-
-      score += 10;
-
-      updateHUD();
+        player.x += 7;
     }
 
-  });
+    // ENEMY MOVEMENT
+    enemies.getChildren().forEach(enemy=>{
 
-  score += gear * 0.05;
+        enemy.y += speed;
 
-  updateHUD();
+        if(enemy.y > window.innerHeight){
 
-}
+            enemy.destroy();
 
-function spawnEnemy(){
+            score += 10;
 
-  const x = Phaser.Math.Between(
-    window.innerWidth/2 - 150,
-    window.innerWidth/2 + 150
-  );
+            updateHUD();
+        }
 
-  let enemy = enemies.create(x,-100,"enemy");
+    });
 
-  enemy.setScale(1.2);
+    score += 0.05;
+
+    updateHUD();
 
 }
 
 function updateHUD(){
 
-  document.getElementById("score").innerText =
-    Math.floor(score);
+    document.getElementById("score").innerText =
+        Math.floor(score);
 
-  document.getElementById("speed").innerText =
-    speed;
+    document.getElementById("speed").innerText =
+        speed;
 
-  document.getElementById("lives").innerText =
-    lives;
+    document.getElementById("lives").innerText =
+        lives;
 
-  document.getElementById("gear").innerText =
-    gear;
-
-  if(score > highScore){
-
-    highScore = Math.floor(score);
-
-    localStorage.setItem("highscore",highScore);
-
-    document.getElementById("highScore").innerText =
-      highScore;
-  }
+    document.getElementById("gear").innerText =
+        gear;
 
 }
-
-function setGear(g){
-
-  gear = g;
-
-  if(g===1) speed=5;
-  if(g===2) speed=8;
-  if(g===3) speed=11;
-  if(g===4) speed=15;
-  if(g===-1) speed=2;
-
-}
-
-document.querySelectorAll(".gearBtn").forEach(btn=>{
-
-  btn.addEventListener("click",()=>{
-
-    setGear(parseInt(btn.dataset.gear));
-
-  });
-
-});
-
-document.getElementById("leftBtn").addEventListener("touchstart",()=>moveLeft=true);
-document.getElementById("leftBtn").addEventListener("touchend",()=>moveLeft=false);
-
-document.getElementById("rightBtn").addEventListener("touchstart",()=>moveRight=true);
-document.getElementById("rightBtn").addEventListener("touchend",()=>moveRight=false);
 
 function crash(){
 
-  gamePaused = true;
+    if(gamePaused) return;
 
-  showQuiz();
+    gamePaused = true;
+
+    showQuiz();
 
 }
 
 function showQuiz(){
 
-  const modal = document.getElementById("quizModal");
+    const modal =
+        document.getElementById("quizModal");
 
-  modal.classList.remove("hidden");
+    modal.classList.remove("hidden");
 
-  const q = questions[
-    Math.floor(Math.random()*questions.length)
-  ];
+    const q =
+        questions[
+            Math.floor(Math.random()*questions.length)
+        ];
 
-  document.getElementById("question").innerText =
-    q.question;
+    document.getElementById("question").innerText =
+        q.question;
 
-  const answersDiv =
-    document.getElementById("answers");
+    const answers =
+        document.getElementById("answers");
 
-  answersDiv.innerHTML = "";
+    answers.innerHTML = "";
 
-  let timer = 10;
+    q.answers.forEach((ans,index)=>{
 
-  document.getElementById("timer").innerText =
-    timer;
+        const div =
+            document.createElement("div");
 
-  const countdown = setInterval(()=>{
+        div.classList.add("answer");
 
-    timer--;
+        div.innerText = ans;
 
-    document.getElementById("timer").innerText =
-      timer;
+        div.onclick = ()=>{
 
-    if(timer<=0){
+            if(index === q.correct){
 
-      clearInterval(countdown);
+                div.classList.add("correct");
 
-      wrongAnswer();
+                setTimeout(()=>{
 
-    }
+                    modal.classList.add("hidden");
 
-  },1000);
+                    gamePaused = false;
 
-  q.answers.forEach((ans,index)=>{
+                },1500);
 
-    const div = document.createElement("div");
+            }else{
 
-    div.classList.add("answer");
+                div.classList.add("wrong");
 
-    div.innerText = ans;
+                lives--;
 
-    div.onclick = ()=>{
+                resetGame();
 
-      clearInterval(countdown);
+            }
 
-      if(index===q.correct){
+        };
 
-        div.classList.add("correct");
+        answers.appendChild(div);
 
-        document.getElementById("result").innerText =
-          "Correct Answer!";
-
-        setTimeout(()=>{
-
-          modal.classList.add("hidden");
-
-          document.getElementById("result").innerText="";
-
-          gamePaused = false;
-
-        },2000);
-
-      }else{
-
-        div.classList.add("wrong");
-
-        wrongAnswer();
-
-      }
-
-    };
-
-    answersDiv.appendChild(div);
-
-  });
+    });
 
 }
 
-function wrongAnswer(){
+function resetGame(){
 
-  lives--;
+    score = 0;
 
-  updateHUD();
+    setTimeout(()=>{
 
-  document.getElementById("result").innerText =
-    "Wrong Answer!";
+        document.getElementById("quizModal")
+            .classList.add("hidden");
 
-  setTimeout(()=>{
+        if(lives <= 0){
 
-    document.getElementById("quizModal")
-      .classList.add("hidden");
+            alert("GAME OVER");
 
-    if(lives<=0){
+            location.reload();
 
-      gameOver();
+        }else{
 
-    }else{
+            enemies.clear(true,true);
 
-      restartGame();
+            player.x = window.innerWidth/2;
 
-    }
+            gamePaused = false;
+        }
 
-  },2000);
-
-}
-
-function restartGame(){
-
-  score = 0;
-
-  enemies.clear(true,true);
-
-  gamePaused = false;
+    },1500);
 
 }
 
-function gameOver(){
-
-  document.getElementById("gameOverScreen")
-    .classList.remove("hidden");
-
-}
-
-document.getElementById("startBtn")
+document
+.getElementById("startBtn")
 .addEventListener("click",()=>{
 
-  document.getElementById("startScreen")
+    document
+    .getElementById("startScreen")
     .classList.add("hidden");
 
-});
-
-document.getElementById("restartBtn")
-.addEventListener("click",()=>{
-
-  location.reload();
-
-});
-
-document.getElementById("pauseBtn")
-.addEventListener("click",()=>{
-
-  gamePaused = true;
-
-  document.getElementById("pauseScreen")
-    .classList.remove("hidden");
-
-});
-
-document.getElementById("resumeBtn")
-.addEventListener("click",()=>{
-
-  gamePaused = false;
-
-  document.getElementById("pauseScreen")
-    .classList.add("hidden");
+    gamePaused = false;
 
 });
