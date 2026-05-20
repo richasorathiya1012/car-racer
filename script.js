@@ -2,21 +2,29 @@ const questions = [
 {
 question:"What does phishing mean in Cybersecurity?",
 answers:[
-"A. Physically stealing a computer",
-"B. Tricking users into revealing sensitive information",
-"C. Installing antivirus software",
-"D. Encrypting files"
+"Physically stealing a computer",
+"Tricking users into revealing sensitive information",
+"Installing antivirus software",
+"Encrypting files"
 ],
 correct:1
+},
+{
+question:"Which protocol is commonly used for secure web browsing?",
+answers:[
+"HTTP",
+"FTP",
+"HTTPS",
+"SMTP"
+],
+correct:2
 }
 ];
 
 let score = 0;
 let lives = 3;
-let speed = 5;
+let speed = 6;
 let gear = 1;
-
-let gameStarted = false;
 let gamePaused = true;
 
 const config = {
@@ -24,13 +32,13 @@ const config = {
     width: window.innerWidth,
     height: window.innerHeight,
     parent: "gameContainer",
-    physics:{
-        default:"arcade",
-        arcade:{
-            debug:false
+    physics: {
+        default: "arcade",
+        arcade: {
+            debug: false
         }
     },
-    scene:{
+    scene: {
         preload,
         create,
         update
@@ -42,9 +50,10 @@ const game = new Phaser.Game(config);
 let player;
 let enemies;
 let cursors;
-let roadLines = [];
+let roadGraphics;
+let lines = [];
 
-function preload(){
+function preload() {
 
     this.load.image(
         "player",
@@ -55,44 +64,45 @@ function preload(){
         "enemy",
         "assets/images/enemy.png"
     );
-
 }
 
-function create(){
+function create() {
 
     // ROAD
     this.add.rectangle(
-        window.innerWidth/2,
-        window.innerHeight/2,
+        window.innerWidth / 2,
+        window.innerHeight / 2,
         420,
         window.innerHeight,
         0x222222
     );
 
     // ROAD LINES
-    for(let i=0;i<20;i++){
+    for (let i = 0; i < 20; i++) {
 
         let line = this.add.rectangle(
-            window.innerWidth/2,
-            i*80,
+            window.innerWidth / 2,
+            i * 80,
             10,
-            50,
+            40,
             0xffffff
         );
 
-        roadLines.push(line);
+        lines.push(line);
     }
 
-    // PLAYER
+    // PLAYER CAR
     player = this.physics.add.sprite(
-        window.innerWidth/2,
-        window.innerHeight - 150,
+        window.innerWidth / 2,
+        window.innerHeight - 120,
         "player"
     );
 
-    player.setScale(1.2);
+    player.setScale(0.7);
 
-    // ENEMIES
+    player.setCollideWorldBounds(true);
+
+    // ENEMIES GROUP
     enemies = this.physics.add.group();
 
     // KEYBOARD
@@ -100,14 +110,15 @@ function create(){
 
     // SPAWN ENEMIES
     this.time.addEvent({
-        delay:1500,
-        callback:()=>{
+        delay: 1500,
+        loop: true,
+        callback: () => {
 
-            if(!gamePaused){
+            if (!gamePaused) {
 
                 let x = Phaser.Math.Between(
-                    window.innerWidth/2 - 150,
-                    window.innerWidth/2 + 150
+                    window.innerWidth / 2 - 140,
+                    window.innerWidth / 2 + 140
                 );
 
                 let enemy = enemies.create(
@@ -116,75 +127,77 @@ function create(){
                     "enemy"
                 );
 
-                enemy.setScale(1.2);
+                enemy.setScale(0.7);
 
+                enemy.setVelocityY(300);
             }
 
-        },
-        loop:true
+        }
     });
 
     // COLLISION
     this.physics.add.overlap(
         player,
         enemies,
-        crash,
+        handleCrash,
         null,
         this
     );
 
+    // MOBILE BUTTONS
+    document.getElementById("leftBtn")
+    .addEventListener("touchstart", () => {
+        player.x -= 50;
+    });
+
+    document.getElementById("rightBtn")
+    .addEventListener("touchstart", () => {
+        player.x += 50;
+    });
+
 }
 
-function update(){
+function update() {
 
-    if(gamePaused) return;
+    if (gamePaused) return;
 
     // ROAD MOVEMENT
-    roadLines.forEach(line=>{
+    lines.forEach(line => {
 
         line.y += speed;
 
-        if(line.y > window.innerHeight){
-
-            line.y = -50;
+        if (line.y > window.innerHeight) {
+            line.y = -40;
         }
-
     });
 
-    // PLAYER CONTROLS
-    if(cursors.left.isDown){
-
+    // KEYBOARD CONTROLS
+    if (cursors.left.isDown) {
         player.x -= 7;
     }
 
-    if(cursors.right.isDown){
-
+    if (cursors.right.isDown) {
         player.x += 7;
     }
 
-    // ENEMY MOVEMENT
-    enemies.getChildren().forEach(enemy=>{
+    // REMOVE ENEMIES
+    enemies.getChildren().forEach(enemy => {
 
-        enemy.y += speed;
-
-        if(enemy.y > window.innerHeight){
+        if (enemy.y > window.innerHeight + 100) {
 
             enemy.destroy();
 
             score += 10;
-
-            updateHUD();
         }
-
     });
 
+    // SCORE
     score += 0.05;
 
     updateHUD();
-
 }
 
-function updateHUD(){
+function updateHUD() {
 
     document.getElementById("score").innerText =
         Math.floor(score);
@@ -197,20 +210,18 @@ function updateHUD(){
 
     document.getElementById("gear").innerText =
         gear;
-
 }
 
-function crash(){
+function handleCrash() {
 
-    if(gamePaused) return;
+    if (gamePaused) return;
 
     gamePaused = true;
 
     showQuiz();
-
 }
 
-function showQuiz(){
+function showQuiz() {
 
     const modal =
         document.getElementById("quizModal");
@@ -219,7 +230,7 @@ function showQuiz(){
 
     const q =
         questions[
-            Math.floor(Math.random()*questions.length)
+            Math.floor(Math.random() * questions.length)
         ];
 
     document.getElementById("question").innerText =
@@ -230,7 +241,28 @@ function showQuiz(){
 
     answers.innerHTML = "";
 
-    q.answers.forEach((ans,index)=>{
+    let timer = 10;
+
+    document.getElementById("timer").innerText =
+        timer;
+
+    const countdown = setInterval(() => {
+
+        timer--;
+
+        document.getElementById("timer").innerText =
+            timer;
+
+        if (timer <= 0) {
+
+            clearInterval(countdown);
+
+            wrongAnswer();
+        }
+
+    }, 1000);
+
+    q.answers.forEach((ans, index) => {
 
         const div =
             document.createElement("div");
@@ -239,74 +271,65 @@ function showQuiz(){
 
         div.innerText = ans;
 
-        div.onclick = ()=>{
+        div.onclick = () => {
 
-            if(index === q.correct){
+            clearInterval(countdown);
+
+            if (index === q.correct) {
 
                 div.classList.add("correct");
 
-                setTimeout(()=>{
+                setTimeout(() => {
 
                     modal.classList.add("hidden");
 
                     gamePaused = false;
 
-                },1500);
+                }, 1500);
 
-            }else{
+            } else {
 
                 div.classList.add("wrong");
 
-                lives--;
-
-                resetGame();
-
+                wrongAnswer();
             }
-
         };
 
         answers.appendChild(div);
-
     });
-
 }
 
-function resetGame(){
+function wrongAnswer() {
+
+    lives--;
 
     score = 0;
 
-    setTimeout(()=>{
+    enemies.clear(true, true);
 
-        document.getElementById("quizModal")
-            .classList.add("hidden");
+    document.getElementById("quizModal")
+    .classList.add("hidden");
 
-        if(lives <= 0){
+    if (lives <= 0) {
 
-            alert("GAME OVER");
+        alert("GAME OVER");
 
-            location.reload();
+        location.reload();
 
-        }else{
+    } else {
 
-            enemies.clear(true,true);
-
-            player.x = window.innerWidth/2;
-
-            gamePaused = false;
-        }
-
-    },1500);
-
+        gamePaused = false;
+    }
 }
 
+// START BUTTON
 document
 .getElementById("startBtn")
-.addEventListener("click",()=>{
+.addEventListener("click", () => {
 
     document
     .getElementById("startScreen")
     .classList.add("hidden");
 
     gamePaused = false;
-
 });
