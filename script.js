@@ -84,8 +84,8 @@ let moveRight = false;
 
 function preload(){
 
-  this.load.image("player","https://labs.phaser.io/assets/sprites/car90.png");
-  this.load.image("enemy","https://labs.phaser.io/assets/sprites/carred.png");
+this.load.image("player","assets/images/player.png");
+this.load.image("enemy","assets/images/enemy.png");
 
 }
 
