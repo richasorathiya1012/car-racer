@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cyber Racer</title>
+
+  <link rel="stylesheet" href="style.css"/>
+
+  <!-- Phaser -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+</head>
+<body>
+
+<div id="gameContainer"></div>
+
+<!-- HUD -->
+<div class="hud">
+  <div>Score: <span id="score">0</span></div>
+  <div>Speed: <span id="speed">0</span></div>
+  <div>Lives: <span id="lives">3</span></div>
+  <div>Gear: <span id="gear">1</span></div>
+  <div>High Score: <span id="highScore">0</span></div>
+</div>
+
+<!-- Pause & Sound -->
+<div class="topButtons">
+  <button id="pauseBtn">⏸ Pause</button>
+  <button id="soundBtn">🔊 Sound</button>
+</div>
+
+<!-- Mobile Controls -->
+<div class="mobileControls">
+
+  <div class="leftControls">
+    <button class="gearBtn" data-gear="1">1</button>
+    <button class="gearBtn" data-gear="2">2</button>
+    <button class="gearBtn" data-gear="3">3</button>
+    <button class="gearBtn" data-gear="4">4</button>
+    <button class="gearBtn" data-gear="-1">R</button>
+  </div>
+
+  <div class="rightControls">
+    <button id="leftBtn">⬅</button>
+    <button id="rightBtn">➡</button>
+  </div>
+
+</div>
+
+<!-- Start Screen -->
+<div id="startScreen" class="overlay">
+  <h1>CYBER RACER</h1>
+  <button id="startBtn">START GAME</button>
+</div>
+
+<!-- Pause Screen -->
+<div id="pauseScreen" class="overlay hidden">
+  <h1>PAUSED</h1>
+  <button id="resumeBtn">RESUME</button>
+</div>
+
+<!-- Game Over -->
+<div id="gameOverScreen" class="overlay hidden">
+  <h1>GAME OVER</h1>
+  <button id="restartBtn">RESTART</button>
+</div>
+
+<!-- Quiz Modal -->
+<div id="quizModal" class="quiz hidden">
+  <div class="quizBox">
+
+    <h2>Cybersecurity Question</h2>
+
+    <div id="timer">10</div>
+
+    <p id="question"></p>
+
+    <div id="answers"></div>
+
+    <div id="result"></div>
+
+  </div>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
